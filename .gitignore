@@ -1,0 +1,10 @@
+.DS_Store
+*.log
+node_modules/
+.vscode/
+.idea/
+
+# Deprecated pages (managed via /annual-eval skill, not a web UI)
+admin.html
+login.html
+m.html

@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Annual Evaluation Feedback · Jericho Care</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="site">
+    <h1>Jericho Care</h1>
+    <span class="subtitle">Annual Evaluation Feedback</span>
+  </header>
+
+  <div id="state-loading" class="loading">
+    <span class="spinner"></span>
+    <span>Loading…</span>
+  </div>
+
+  <div id="state-error" class="hidden"></div>
+
+  <div id="state-form" class="hidden">
+    <div class="card">
+      <div class="card-header">
+        <span class="eyebrow">You are reviewing</span>
+        <div class="name" id="subject-name"></div>
+        <div class="meta" id="subject-role"></div>
+        <div class="meta" id="review-period"></div>
+        <div class="meta" id="due-note" style="margin-top:.35rem"></div>
+      </div>
+
+      <form id="feedback-form">
+        <div class="field">
+          <label class="title" for="prose-strengths">1. What does this leader do exceptionally well?</label>
+          <span class="hint">Think about specific moments — times they got something right, handled something hard, or made your work or a resident's experience better. Touch on anything that stands out: job performance, how they handle residents and families, how they work with you and your team, or reliability.</span>
+          <textarea id="prose-strengths" name="prose_strengths"></textarea>
+        </div>
+
+        <div class="field">
+          <label class="title" for="prose-opportunities">2. Where is their biggest opportunity for growth?</label>
+          <span class="hint">Be candid. What would you want them to do differently in the coming year? Specifics are more useful than labels.</span>
+          <textarea id="prose-opportunities" name="prose_opportunities"></textarea>
+        </div>
+
+        <div class="field">
+          <label class="title" for="prose-heart">3. A specific example — positive or constructive — of how they live the HEART values with your department</label>
+          <span class="hint"><strong>H</strong>onesty · <strong>E</strong>xcellence · <strong>A</strong>ppreciation · <strong>R</strong>espect · <strong>T</strong>eamwork. One clear example beats a general impression.</span>
+          <textarea id="prose-heart" name="prose_heart_example"></textarea>
+        </div>
+
+        <div class="field">
+          <label class="title">Quick ratings</label>
+          <span class="hint">1 = Below Standard · 2 = Standard · 3 = Above Standard · N/A = not observed.</span>
+          <table class="rating-table">
+            <tr>
+              <td>Job skills, knowledge &amp; quality of work</td>
+              <td>
+                <div class="rating-group">
+                  <label><input type="radio" name="rating_job_skills" value="1"> 1</label>
+                  <label><input type="radio" name="rating_job_skills" value="2"> 2</label>
+                  <label><input type="radio" name="rating_job_skills" value="3"> 3</label>
+                  <label><input type="radio" name="rating_job_skills" value=""> N/A</label>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td>Customer service (residents/families)</td>
+              <td>
+                <div class="rating-group">
+                  <label><input type="radio" name="rating_customer_service" value="1"> 1</label>
+                  <label><input type="radio" name="rating_customer_service" value="2"> 2</label>
+                  <label><input type="radio" name="rating_customer_service" value="3"> 3</label>
+                  <label><input type="radio" name="rating_customer_service" value=""> N/A</label>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td>Teamwork with staff &amp; managers</td>
+              <td>
+                <div class="rating-group">
+                  <label><input type="radio" name="rating_teamwork" value="1"> 1</label>
+                  <label><input type="radio" name="rating_teamwork" value="2"> 2</label>
+                  <label><input type="radio" name="rating_teamwork" value="3"> 3</label>
+                  <label><input type="radio" name="rating_teamwork" value=""> N/A</label>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td>Attendance &amp; reliability</td>
+              <td>
+                <div class="rating-group">
+                  <label><input type="radio" name="rating_attendance" value="1"> 1</label>
+                  <label><input type="radio" name="rating_attendance" value="2"> 2</label>
+                  <label><input type="radio" name="rating_attendance" value="3"> 3</label>
+                  <label><input type="radio" name="rating_attendance" value=""> N/A</label>
+                </div>
+              </td>
+            </tr>
+          </table>
+          <span class="hint" style="margin-top:.5rem">Attendance here is <em>your observation</em>, not payroll data.</span>
+        </div>
+
+        <div class="field">
+          <label class="title" for="optional-additional">Anything else the administrator should know? (optional)</label>
+          <textarea id="optional-additional" name="optional_additional" style="min-height:80px"></textarea>
+        </div>
+
+        <div class="field">
+          <label class="title" for="reviewer-name">Your name (optional)</label>
+          <span class="hint">Leave blank to submit anonymously. Sign your name if you'd like the administrator to know who the feedback is from.</span>
+          <input id="reviewer-name" name="reviewer_name" type="text" autocomplete="name">
+        </div>
+
+        <button type="submit" id="submit-btn" class="btn">Submit Feedback</button>
+      </form>
+
+      <div class="footer-note">
+        <strong>Keep feedback focused on observed job performance.</strong>
+        Do not include medical information, FMLA/leave, pregnancy, age, disability, or
+        other protected-category details — even if relevant. Do not include resident
+        names or identifiers. Your response is confidential to the administrator.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { lookupCycle, submitFeedback } from './assets/supabase.js?v=2';
+import { qs, showError, toast, fmtDate } from './assets/common.js?v=2';
+
+const token = qs('t');
+
+function show(which) {
+  for (const id of ['state-loading','state-error','state-form']) {
+    document.getElementById(id).classList.toggle('hidden', id !== which);
+  }
+}
+
+function friendlyError(err) {
+  if (err === 'invalid_token')  return 'That feedback link is not valid. Please check with the administrator.';
+  if (err === 'expired')        return 'This feedback link has expired. Please ask the administrator to resend it.';
+  if (err === 'cycle_closed')   return 'This review has been closed for feedback.';
+  return 'Something went wrong. Please try again or contact the administrator.';
+}
+
+async function boot() {
+  if (!token) {
+    show('state-error');
+    showError('#state-error', 'No feedback link token provided. Please use the link you were sent.');
+    return;
+  }
+  try {
+    const res = await lookupCycle(token);
+    if (!res || res.ok === false) {
+      show('state-error');
+      showError('#state-error', friendlyError(res?.error));
+      return;
+    }
+    document.getElementById('subject-name').textContent = res.subject_name || '';
+    document.getElementById('subject-role').textContent = res.subject_role || '';
+    document.getElementById('review-period').textContent =
+      `Review period: ${fmtDate(res.review_period_start)} — ${fmtDate(res.review_period_end)}`;
+    if (res.feedback_due_at) {
+      document.getElementById('due-note').textContent =
+        `Feedback due by ${fmtDate(res.feedback_due_at)}.`;
+    }
+    show('state-form');
+  } catch (e) {
+    console.error('lookup failed', e);
+    show('state-error');
+    showError('#state-error', 'Unable to load the review. Please try again in a moment.');
+  }
+}
+
+document.getElementById('feedback-form').addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  const btn = document.getElementById('submit-btn');
+  const data = new FormData(ev.target);
+  const toSmallint = v => (v === '' || v === null) ? null : parseInt(v, 10);
+
+  const payload = {
+    p_token: token,
+    p_prose_strengths:     data.get('prose_strengths')     || null,
+    p_prose_opportunities: data.get('prose_opportunities') || null,
+    p_prose_heart_example: data.get('prose_heart_example') || null,
+    p_rating_job_skills:       toSmallint(data.get('rating_job_skills')),
+    p_rating_customer_service: toSmallint(data.get('rating_customer_service')),
+    p_rating_teamwork:         toSmallint(data.get('rating_teamwork')),
+    p_rating_attendance:       toSmallint(data.get('rating_attendance')),
+    p_optional_additional:     data.get('optional_additional') || null,
+    p_reviewer_name:           data.get('reviewer_name') || null
+  };
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Submitting…';
+  try {
+    const res = await submitFeedback(payload);
+    if (res?.ok) {
+      window.location.href = 'thanks.html';
+    } else {
+      toast(friendlyError(res?.error), 3500, true);
+      btn.disabled = false;
+      btn.textContent = 'Submit Feedback';
+    }
+  } catch (e) {
+    console.error('submit failed', e);
+    toast('Submission failed. Please try again.', 3500, true);
+    btn.disabled = false;
+    btn.textContent = 'Submit Feedback';
+  }
+});
+
+boot();
+</script>
+</body>
+</html>
