@@ -33,8 +33,8 @@
 
       <form id="feedback-form">
         <div class="field">
-          <label class="title" for="prose-strengths">1. What does this leader do exceptionally well?</label>
-          <span class="hint">Think about specific moments — times they got something right, handled something hard, or made your work or a resident's experience better. Touch on anything that stands out: job performance, how they handle residents and families, how they work with you and your team, or reliability.</span>
+          <label class="title" for="prose-strengths" id="q1-label">1. What does this leader do exceptionally well?</label>
+          <span class="hint" id="q1-hint">Think about specific moments — times they got something right, handled something hard, or made your work or a resident's experience better. Touch on anything that stands out: job performance, how they handle residents and families, how they work with you and your team, or reliability.</span>
           <textarea id="prose-strengths" name="prose_strengths"></textarea>
         </div>
 
@@ -45,7 +45,7 @@
         </div>
 
         <div class="field">
-          <label class="title" for="prose-heart">3. A specific example — positive or constructive — of how they live the HEART values with your department</label>
+          <label class="title" for="prose-heart" id="q3-label">3. A specific example — positive or constructive — of how they live the HEART values with your department</label>
           <span class="hint"><strong>H</strong>onesty · <strong>E</strong>xcellence · <strong>A</strong>ppreciation · <strong>R</strong>espect · <strong>T</strong>eamwork. One clear example beats a general impression.</span>
           <textarea id="prose-heart" name="prose_heart_example"></textarea>
         </div>
@@ -160,6 +160,18 @@ async function boot() {
     }
     document.getElementById('subject-name').textContent = res.subject_name || '';
     document.getElementById('subject-role').textContent = res.subject_role || '';
+    if (res.subject_track === 'nursing') {
+      // Direct-care wording for RN/LVN/CNA subjects (dept-head wording is the default).
+      // Use the subject's actual role in Q1 when it's a short title like CNA/LVN/RN.
+      const roleWord = (res.subject_role && res.subject_role.length <= 4)
+        ? res.subject_role : 'team member';
+      document.getElementById('q1-label').textContent =
+        `1. What does this ${roleWord} do exceptionally well?`;
+      document.getElementById('q1-hint').textContent =
+        'Think about specific moments — times they gave great care, handled a tough shift or a difficult family situation, or made a resident’s day better. Touch on anything that stands out: quality of care and job performance, how they treat residents and families, how they work with the rest of the team, or reliability.';
+      document.getElementById('q3-label').textContent =
+        '3. A specific example — positive or constructive — of how they live the HEART values in their daily work';
+    }
     document.getElementById('review-period').textContent =
       `Review period: ${fmtDate(res.review_period_start)} — ${fmtDate(res.review_period_end)}`;
     if (res.feedback_due_at) {
