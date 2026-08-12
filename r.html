@@ -108,8 +108,8 @@
         </div>
 
         <div class="field">
-          <label class="title" for="reviewer-name">Your name (optional)</label>
-          <span class="hint">Leave blank to submit anonymously. Sign your name if you'd like the administrator to know who the feedback is from.</span>
+          <label class="title" for="reviewer-name" id="name-label">Your name (optional)</label>
+          <span class="hint" id="name-hint">Leave blank to submit anonymously. Sign your name if you'd like the administrator to know who the feedback is from.</span>
           <input id="reviewer-name" name="reviewer_name" type="text" autocomplete="name">
         </div>
 
@@ -131,6 +131,10 @@ import { lookupCycle, submitFeedback } from './assets/supabase.js?v=2';
 import { qs, showError, toast, fmtDate } from './assets/common.js?v=2';
 
 const token = qs('t');
+// Posted-QR route (huddle board). Signed feedback only — the board is a shared,
+// unaddressed entry point, so we require a name to keep the process accountable.
+// The emailed route stays optional-anonymous.
+const viaQR = qs('src') === 'qr';
 
 function show(which) {
   for (const id of ['state-loading','state-error','state-form']) {
@@ -172,6 +176,16 @@ async function boot() {
       document.getElementById('q3-label').textContent =
         '3. A specific example — positive or constructive — of how they live the HEART values in their daily work';
     }
+    if (viaQR) {
+      const nameInput = document.getElementById('reviewer-name');
+      nameInput.required = true;
+      nameInput.placeholder = 'First and last name';
+      document.getElementById('name-label').textContent = 'Your name (required)';
+      document.getElementById('name-hint').textContent =
+        'Please sign your name. Feedback submitted from the posted code is not anonymous — ' +
+        'only the administrator sees it, and it is never shared with the person being reviewed ' +
+        'or with your coworkers.';
+    }
     document.getElementById('review-period').textContent =
       `Review period: ${fmtDate(res.review_period_start)} — ${fmtDate(res.review_period_end)}`;
     if (res.feedback_due_at) {
@@ -192,6 +206,13 @@ document.getElementById('feedback-form').addEventListener('submit', async (ev) =
   const data = new FormData(ev.target);
   const toSmallint = v => (v === '' || v === null) ? null : parseInt(v, 10);
 
+  const signedName = (data.get('reviewer_name') || '').trim();
+  if (viaQR && signedName.length < 2) {
+    toast('Please enter your name to submit from the posted code.', 3500, true);
+    document.getElementById('reviewer-name').focus();
+    return;
+  }
+
   const payload = {
     p_token: token,
     p_prose_strengths:     data.get('prose_strengths')     || null,
@@ -202,7 +223,9 @@ document.getElementById('feedback-form').addEventListener('submit', async (ev) =
     p_rating_teamwork:         toSmallint(data.get('rating_teamwork')),
     p_rating_attendance:       toSmallint(data.get('rating_attendance')),
     p_optional_additional:     data.get('optional_additional') || null,
-    p_reviewer_name:           data.get('reviewer_name') || null
+    // QR submissions are always signed; tag them so the source is visible in the
+    // consolidated feedback without needing a schema change.
+    p_reviewer_name:           signedName ? (viaQR ? signedName + ' (posted code)' : signedName) : null
   };
 
   btn.disabled = true;

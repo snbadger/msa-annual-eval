@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Annual Review Feedback · Morning Star Post Acute</title>
+<link rel="stylesheet" href="./assets/style.css?v=2">
+<style>
+  .pick-list { display: flex; flex-direction: column; gap: .6rem; margin-top: 1rem; }
+  .pick {
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    padding: 1rem 1.1rem; border: 1px solid var(--line, #d8d8d8); border-radius: 12px;
+    text-decoration: none; color: inherit; background: var(--card, #fff);
+    min-height: 62px; transition: background .12s ease, border-color .12s ease;
+  }
+  .pick:active { background: #f2f5f9; border-color: #9db4cd; }
+  .pick .who { display: flex; flex-direction: column; gap: .15rem; }
+  .pick .nm { font-weight: 650; font-size: 1.06rem; letter-spacing: -.01em; }
+  .pick .rl { font-size: .84rem; opacity: .68; }
+  .pick .go { font-size: 1.3rem; opacity: .35; flex: none; }
+  .shift-head {
+    font-size: .74rem; text-transform: uppercase; letter-spacing: .09em;
+    opacity: .55; margin: 1.15rem 0 .1rem; font-weight: 650;
+  }
+  .notice {
+    margin-top: 1.1rem; padding: .85rem 1rem; border-radius: 10px;
+    background: #eef4fb; border: 1px solid #cddcee; font-size: .88rem; line-height: 1.5;
+  }
+  .notice strong { display: block; margin-bottom: .2rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">Jericho Care</div>
+  <h1>Annual Review Feedback</h1>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="eyebrow">Choose who you're giving feedback on</span>
+      <div class="meta" style="margin-top:.4rem">
+        Only fill out forms for people you actually work with. Each one takes about
+        5 minutes. You can do more than one.
+      </div>
+    </div>
+
+    <div id="list"></div>
+
+    <div class="notice">
+      <strong>Please sign your name.</strong>
+      Feedback given from the posted code is not anonymous. Only the administrator
+      sees your response — it is never shown to the person being reviewed, to your
+      charge nurse, or to your coworkers.
+    </div>
+
+    <div class="footer-note" style="margin-top:1.1rem">
+      <strong>Keep feedback focused on observed job performance.</strong>
+      Do not include medical information, FMLA/leave, pregnancy, age, disability, or
+      other protected-category details. Do not include resident names or identifiers.
+    </div>
+  </div>
+</div>
+
+<script type="module">
+// Subjects in the current nursing batch. Order: by shift, then name.
+// Update this list when a new batch opens (see annual-eval skill, Action A-N).
+const SUBJECTS = [
+  { n: 'Rachel Bazan',    r: 'CNA', s: 'Days (AM)',        t: 'zw5pt8sGE6pkExy8' },
+  { n: 'Maribel Lopez',   r: 'CNA', s: 'Evenings (PM)',    t: 'ubpC8aDvFBccm2v9' },
+  { n: 'Raymond Che',     r: 'CNA', s: 'Evenings (PM)',    t: 'jcervGFTw8Cj8TEm' },
+  { n: 'Sheyla Zavala',   r: 'CNA', s: 'Evenings (PM)',    t: 'cnXkfAqjfTxrB23y' },
+  { n: 'Tria Sayaovang',  r: 'CNA', s: 'Evenings (PM)',    t: 'dhn6hjURpidMkdeD' },
+  { n: 'Luke Baird',      r: 'CNA', s: 'PRN — days & evenings', t: 'SKRfakGhfQBdiPn7' },
+  { n: 'Gary Abid',       r: 'LVN', s: 'PRN — all shifts', t: 'cdNBn7Dv6BZqfNLn' },
+  { n: 'Jessica Hurd',    r: 'LVN', s: 'Nights',           t: '2wqFnUxyCECvMS2X' },
+  { n: 'James Ortega',    r: 'RN',  s: 'Weekend desk',     t: 'JBePfpAyhdfnD2Hh' },
+];
+
+const list = document.getElementById('list');
+let lastShift = null;
+const frag = document.createDocumentFragment();
+
+for (const p of SUBJECTS) {
+  if (p.s !== lastShift) {
+    const h = document.createElement('div');
+    h.className = 'shift-head';
+    h.textContent = p.s;
+    frag.appendChild(h);
+    lastShift = p.s;
+  }
+  const a = document.createElement('a');
+  a.className = 'pick';
+  a.href = `r.html?t=${encodeURIComponent(p.t)}&src=qr`;
+  a.innerHTML =
+    `<span class="who"><span class="nm"></span><span class="rl"></span></span><span class="go">›</span>`;
+  a.querySelector('.nm').textContent = p.n;
+  a.querySelector('.rl').textContent = p.r;
+  frag.appendChild(a);
+}
+
+const holder = document.createElement('div');
+holder.className = 'pick-list';
+holder.appendChild(frag);
+list.appendChild(holder);
+</script>
+</body>
+</html>
