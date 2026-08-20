@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Annual Review Feedback · Morning Star Post Acute</title>
-<link rel="stylesheet" href="./assets/style.css?v=2">
+<link rel="stylesheet" href="./assets/style.css?v=3">
 <style>
   .pick-list { display: flex; flex-direction: column; gap: .6rem; margin-top: 1rem; }
   .pick {
@@ -18,6 +18,11 @@
   .pick .nm { font-weight: 650; font-size: 1.06rem; letter-spacing: -.01em; }
   .pick .rl { font-size: .84rem; opacity: .68; }
   .pick .go { font-size: 1.3rem; opacity: .35; flex: none; }
+  .pick.done {
+    background: #f4faf6; border-color: #cfe7d8; pointer-events: none;
+  }
+  .pick.done .nm { color: #3c6e52; }
+  .pick.done .go { font-size: 1.05rem; opacity: 1; color: #2e8b57; font-weight: 700; }
   .shift-head {
     font-size: .74rem; text-transform: uppercase; letter-spacing: .09em;
     opacity: .55; margin: 1.15rem 0 .1rem; font-weight: 650;
@@ -27,6 +32,23 @@
     background: #eef4fb; border: 1px solid #cddcee; font-size: .88rem; line-height: 1.5;
   }
   .notice strong { display: block; margin-bottom: .2rem; }
+  select, input[type=text] {
+    width: 100%; font-size: 1rem; padding: .8rem .9rem; border: 1px solid var(--line, #d8d8d8);
+    border-radius: 10px; background: #fff; margin-top: .45rem; font-family: inherit;
+  }
+  .fld-label { font-size: .8rem; font-weight: 650; text-transform: uppercase; letter-spacing: .06em; opacity: .6; margin-top: 1rem; display: block; }
+  .who-chip {
+    display: flex; align-items: center; justify-content: space-between; gap: .8rem;
+    margin-top: 1rem; padding: .7rem 1rem; border-radius: 10px; background: #f4f7fa;
+    border: 1px solid #dde5ec; font-size: .95rem;
+  }
+  .who-chip a { font-size: .85rem; }
+  .all-done {
+    margin-top: 1rem; padding: 1rem 1.1rem; border-radius: 12px; text-align: center;
+    background: #f4faf6; border: 1px solid #cfe7d8; color: #3c6e52; line-height: 1.5;
+  }
+  #btnManualGo { margin-top: .8rem; width: 100%; font-size: 1rem; padding: .85rem; border: none; border-radius: 10px; background: #24445c; color: #fff; font-weight: 650; cursor: pointer; font-family: inherit; }
+  .dim-note { font-size: .84rem; opacity: .6; margin-top: .5rem; line-height: 1.45; }
 </style>
 </head>
 <body>
@@ -35,15 +57,36 @@
   <h1>Annual Review Feedback</h1>
 
   <div class="card">
-    <div class="card-header">
-      <span class="eyebrow">Choose who you're giving feedback on</span>
-      <div class="meta" style="margin-top:.4rem">
-        Only fill out forms for people you actually work with. Each one takes about
-        5 minutes. You can do more than one.
+    <!-- STEP 1: who is giving the feedback -->
+    <div id="step-who">
+      <div class="card-header">
+        <span class="eyebrow">First — who are you?</span>
+        <div class="meta" style="margin-top:.4rem">
+          Pick your own name so we can show you which feedback forms you've already
+          finished. Feedback from the posted code is signed, not anonymous.
+        </div>
+      </div>
+      <label class="fld-label" for="whoSelect">Your name</label>
+      <select id="whoSelect"><option value="">Loading names…</option></select>
+      <div id="manualWho" style="display:none">
+        <label class="fld-label" for="whoManual">Type your full name</label>
+        <input id="whoManual" type="text" autocomplete="name" placeholder="First and last name">
+        <button id="btnManualGo">Continue</button>
       </div>
     </div>
 
-    <div id="list"></div>
+    <!-- STEP 2: subject list with completion state -->
+    <div id="step-list" style="display:none">
+      <div class="card-header">
+        <span class="eyebrow">Choose who you're giving feedback on</span>
+        <div class="meta" style="margin-top:.4rem">
+          Only fill out forms for people you actually work with. Each one takes about
+          5 minutes. You can do more than one.
+        </div>
+      </div>
+      <div class="who-chip"><span>👤 <b id="whoName"></b></span><a href="#" id="whoChange">change</a></div>
+      <div id="list"></div>
+    </div>
 
     <div class="notice">
       <strong>Please sign your name.</strong>
@@ -61,6 +104,8 @@
 </div>
 
 <script type="module">
+import { sb } from './assets/supabase.js?v=3';
+
 // Subjects in the current nursing batch. Order: by shift, then name.
 // Update this list when a new batch opens (see annual-eval skill, Action A-N).
 const SUBJECTS = [
@@ -75,32 +120,130 @@ const SUBJECTS = [
   { n: 'James Ortega',    r: 'RN',  s: 'Weekend desk',     t: 'JBePfpAyhdfnD2Hh' },
 ];
 
-const list = document.getElementById('list');
-let lastShift = null;
-const frag = document.createDocumentFragment();
+// Same roster the in-service quiz app uses: active MS staff from Paycom (names only).
+const ROSTER_URL = 'https://pmnudshutxwidxdtouqj.supabase.co/functions/v1/dining-quiz?roster=1&facility=' +
+  encodeURIComponent('Morning Star Post Acute');
 
-for (const p of SUBJECTS) {
-  if (p.s !== lastShift) {
-    const h = document.createElement('div');
-    h.className = 'shift-head';
-    h.textContent = p.s;
-    frag.appendChild(h);
-    lastShift = p.s;
+const $ = (id) => document.getElementById(id);
+function lsGet(k){ try { return localStorage.getItem(k); } catch (e) { return null; } }
+function lsSet(k,v){ try { localStorage.setItem(k,v); } catch (e) {} }
+
+let roster = [];
+let me = lsGet('ae_name') || lsGet('ii_name') || '';
+
+async function loadRoster() {
+  const sel = $('whoSelect');
+  try {
+    const r = await fetch(ROSTER_URL);
+    const data = await r.json();
+    roster = (data.staff || []).map(s => s.n);
+  } catch (e) { roster = []; }
+  sel.innerHTML = '<option value="">— Find your name —</option>';
+  roster.forEach(n => {
+    const o = document.createElement('option');
+    o.value = n; o.textContent = n;
+    sel.appendChild(o);
+  });
+  const m = document.createElement('option');
+  m.value = '__manual';
+  m.textContent = roster.length ? "— My name isn't listed —" : '— Type my name instead —';
+  sel.appendChild(m);
+  // returning reviewer: jump straight to their list
+  if (me) {
+    const hit = roster.find(n => n.toLowerCase() === me.toLowerCase());
+    if (hit) { sel.value = hit; chose(hit); }
+    else if (roster.length === 0) { sel.value = '__manual'; $('manualWho').style.display = ''; $('whoManual').value = me; }
   }
-  const a = document.createElement('a');
-  a.className = 'pick';
-  a.href = `r.html?t=${encodeURIComponent(p.t)}&src=qr`;
-  a.innerHTML =
-    `<span class="who"><span class="nm"></span><span class="rl"></span></span><span class="go">›</span>`;
-  a.querySelector('.nm').textContent = p.n;
-  a.querySelector('.rl').textContent = p.r;
-  frag.appendChild(a);
 }
 
-const holder = document.createElement('div');
-holder.className = 'pick-list';
-holder.appendChild(frag);
-list.appendChild(holder);
+$('whoSelect').onchange = () => {
+  const v = $('whoSelect').value;
+  if (v === '__manual') { $('manualWho').style.display = ''; $('whoManual').focus(); return; }
+  $('manualWho').style.display = 'none';
+  if (v) chose(v);
+};
+$('btnManualGo').onclick = () => {
+  const n = $('whoManual').value.trim();
+  if (n.length < 3 || !n.includes(' ')) { alert('Please enter your full name (first and last).'); return; }
+  chose(n);
+};
+$('whoChange').onclick = (e) => {
+  e.preventDefault();
+  $('step-list').style.display = 'none';
+  $('step-who').style.display = '';
+};
+
+async function chose(name) {
+  me = name;
+  lsSet('ae_name', name);
+  $('step-who').style.display = 'none';
+  $('step-list').style.display = '';
+  $('whoName').textContent = name;
+  $('list').innerHTML = '<div class="dim-note">Checking which forms you’ve already finished…</div>';
+
+  let doneTokens = [];
+  try {
+    const { data, error } = await sb.rpc('reviewer_progress', {
+      p_tokens: SUBJECTS.map(p => p.t),
+      p_reviewer_name: name
+    });
+    if (!error && Array.isArray(data)) doneTokens = data;
+  } catch (e) { /* offline: show all unchecked */ }
+  render(new Set(doneTokens));
+}
+
+function render(doneSet) {
+  const list = $('list');
+  list.innerHTML = '';
+  // don't offer someone their own review
+  const mine = SUBJECTS.filter(p => p.n.toLowerCase() !== me.toLowerCase());
+  const todo = mine.filter(p => !doneSet.has(p.t));
+  const done = mine.filter(p => doneSet.has(p.t));
+
+  const holder = document.createElement('div');
+  holder.className = 'pick-list';
+
+  if (todo.length === 0) {
+    const d = document.createElement('div');
+    d.className = 'all-done';
+    d.innerHTML = '🎉 <b>All done!</b><br>You’ve given feedback on everyone in this batch. Thank you!';
+    holder.appendChild(d);
+  } else {
+    let lastShift = null;
+    for (const p of todo) {
+      if (p.s !== lastShift) {
+        const h = document.createElement('div');
+        h.className = 'shift-head';
+        h.textContent = p.s;
+        holder.appendChild(h);
+        lastShift = p.s;
+      }
+      holder.appendChild(row(p, false));
+    }
+  }
+
+  if (done.length) {
+    const h = document.createElement('div');
+    h.className = 'shift-head';
+    h.textContent = 'Completed ✓';
+    holder.appendChild(h);
+    done.forEach(p => holder.appendChild(row(p, true)));
+  }
+
+  list.appendChild(holder);
+}
+
+function row(p, isDone) {
+  const a = document.createElement('a');
+  a.className = 'pick' + (isDone ? ' done' : '');
+  if (!isDone) a.href = `r.html?t=${encodeURIComponent(p.t)}&src=qr`;
+  a.innerHTML = `<span class="who"><span class="nm"></span><span class="rl"></span></span><span class="go">${isDone ? '✓ submitted' : '›'}</span>`;
+  a.querySelector('.nm').textContent = p.n;
+  a.querySelector('.rl').textContent = isDone ? p.r + ' · ' + p.s : p.r;
+  return a;
+}
+
+loadRoster();
 </script>
 </body>
 </html>

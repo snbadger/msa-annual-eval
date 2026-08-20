@@ -180,6 +180,11 @@ async function boot() {
       const nameInput = document.getElementById('reviewer-name');
       nameInput.required = true;
       nameInput.placeholder = 'First and last name';
+      // Pre-fill from the board's "who are you" step (editable).
+      try {
+        const saved = localStorage.getItem('ae_name') || localStorage.getItem('ii_name');
+        if (saved && !nameInput.value) nameInput.value = saved;
+      } catch (e) { /* storage unavailable — leave blank */ }
       document.getElementById('name-label').textContent = 'Your name (required)';
       document.getElementById('name-hint').textContent =
         'Please sign your name. Feedback submitted from the posted code is not anonymous — ' +
