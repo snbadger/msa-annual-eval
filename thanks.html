@@ -21,9 +21,22 @@
     </div>
     <p>Your response is confidential to the administrator. You won't receive a copy back,
        and no one else will see it in the reviewer group.</p>
-    <p class="dim">The administrator will consolidate all reviewer input before completing the final evaluation.
-       You can close this tab.</p>
+    <p class="dim">The administrator will consolidate all reviewer input before completing the final evaluation.</p>
+    <p style="margin-top:1.1rem">
+      <a href="board.html" style="display:inline-block;padding:.8rem 1.2rem;border-radius:10px;background:#24445c;color:#fff;text-decoration:none;font-weight:650">Give feedback on someone else</a>
+    </p>
+    <p style="margin-top:.6rem">
+      <a href="#" id="logoutLink" style="font-size:.9rem;color:#a33">Done — log out &amp; back to Staff Apps</a>
+    </p>
   </div>
 </div>
+<script>
+// Shared phone: clear the reviewer identity and return to the Staff Apps home screen.
+document.getElementById('logoutLink').onclick = function(e){
+  e.preventDefault();
+  try{localStorage.removeItem('ae_name');}catch(err){}
+  location.href='https://snbadger.github.io/morning-star-rounds/';
+};
+</script>
 </body>
 </html>
