@@ -254,5 +254,16 @@ document.getElementById('feedback-form').addEventListener('submit', async (ev) =
 
 boot();
 </script>
+<script>
+// Bottom bar from the Morning Star Staff Apps hub (ms-nav.js, 11/5/26): Back · All apps · Log out.
+// Log out clears this site's name and the shared one, so the hub signs the person out everywhere.
+window.logout=function(){try{['ae_name','ii_name','ii_dept'].forEach(function(k){localStorage.removeItem(k)})}catch(e){}location.href='https://snbadger.github.io/morning-star-rounds/'};
+// Back returns to the feedback board. Typed feedback is never dropped without asking first.
+function aeDirty(){return [].some.call(document.querySelectorAll('textarea,input[type=text]'),function(e){return e.value.trim()})}
+function aeLeaveOk(){return !aeDirty()||confirm('Leave without submitting? What you typed will not be saved.')}
+window.msNavBack=function(){if(aeLeaveOk())location.href='board.html';return true};
+document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('.msnav [data-a="home"], .msnav [data-a="out"]');if(b&&!aeLeaveOk()){e.stopPropagation();e.preventDefault()}},true);
+</script>
+<script src="https://snbadger.github.io/morning-star-rounds/ms-nav.js?v=1" defer></script>
 </body>
 </html>

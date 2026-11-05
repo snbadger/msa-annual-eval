@@ -245,5 +245,11 @@ function row(p, isDone) {
 
 loadRoster();
 </script>
+<script>
+// Bottom bar from the Morning Star Staff Apps hub (ms-nav.js, 11/5/26): Back · All apps · Log out.
+// Log out clears this site's name and the shared one, so the hub signs the person out everywhere.
+window.logout=function(){try{['ae_name','ii_name','ii_dept'].forEach(function(k){localStorage.removeItem(k)})}catch(e){}location.href='https://snbadger.github.io/morning-star-rounds/'};
+</script>
+<script src="https://snbadger.github.io/morning-star-rounds/ms-nav.js?v=1" defer></script>
 </body>
 </html>
