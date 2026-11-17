@@ -109,13 +109,20 @@ import { sb } from './assets/supabase.js?v=3';
 // Subjects in the current nursing batch. Order: by shift, then name.
 // Update this list when a new batch opens (see annual-eval skill, Action A-N).
 const SUBJECTS = [
-  { n: 'Rachel Bazan',    r: 'CNA', s: 'Days (AM)',        t: 'zw5pt8sGE6pkExy8' },
+  // Rachel Bazan removed 11/5/26 — left 10/16 per Paycom. Cycle locked; her link is retired.
+  //{ n: 'Rachel Bazan',    r: 'CNA', s: 'Days (AM)',       t: 'zw5pt8sGE6pkExy8' },
+  // Oct–Nov 2026 batch added 11/17/26 (feedback due Fri 11/20)
+  { n: 'Kirandeep Grewal',  r: 'CNA', s: 'Evenings (PM)',  t: 'v8m7u3Cd8H7k7PFd' },
+  { n: 'Pete Escamilla',    r: 'CNA', s: 'Evenings (PM)',  t: 'BkYSEvbiAmLMWLUn' },
+  { n: 'Jashanpreet Singh', r: 'LVN', s: 'Evenings (PM)',  t: 'UZ5yFgwLC8xqm7T8' },
   { n: 'Maribel Lopez',   r: 'CNA', s: 'Evenings (PM)',    t: 'ubpC8aDvFBccm2v9' },
   { n: 'Raymond Che',     r: 'CNA', s: 'Evenings (PM)',    t: 'jcervGFTw8Cj8TEm' },
   { n: 'Sheyla Zavala',   r: 'CNA', s: 'Evenings (PM)',    t: 'cnXkfAqjfTxrB23y' },
   { n: 'Tria Sayaovang',  r: 'CNA', s: 'Evenings (PM)',    t: 'dhn6hjURpidMkdeD' },
   // Luke Baird removed 8/12/26 — resigned. Cycle closed; his link is retired.
   { n: 'Gary Abid',       r: 'LVN', s: 'PRN — all shifts', t: 'cdNBn7Dv6BZqfNLn' },
+  { n: 'Azariyah Skye Hollins', r: 'CNA', s: 'Nights',     t: 'a9dCvm8gWTAV4szr' },
+  { n: 'Natalie Garzon',    r: 'CNA', s: 'Nights',         t: 'h82YRic3rwuAm9Vc' },
   { n: 'Jessica Hurd',    r: 'LVN', s: 'Nights',           t: '2wqFnUxyCECvMS2X' },
   { n: 'James Ortega',    r: 'RN',  s: 'Weekend desk',     t: 'JBePfpAyhdfnD2Hh' },
 ];
